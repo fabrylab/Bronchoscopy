@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="en" translate="no">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="google" content="notranslate" />
+        <title>Mechanical Ventilation Simulation</title>
+        <style>
+            /* ---------------------
+           Container Layout and Basic Styling
+           --------------------- */
+            body {
+                font-size: 15px;
+            }
+            .container {
+                display: flex;
+                justify-content: space-between;
+                align-items: stretch;
+                width: 100%;
+            }
+            .column {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .row {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+                flex-wrap: wrap;
+            }
+            .left {
+                width: 35%;
+                overflow-y: auto;
+                overflow-x: hidden;
+                max-height: 100vh;
+            }
+            .right {
+                min-width: 600px;
+                width: 60%;
+            }
+            .row_l {
+                display: flex;
+                justify-content: flex-start;
+                flex-direction: row;
+            }
+            .row_c {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+            }
+            .row_r {
+                display: flex;
+                flex-direction: row;
+                justify-content: flex-end;
+            }
+            .headline {
+                text-align: center;
+                font-weight: bold;
+                font-size: 12pt;
+                margin: 2px 0 2px 0;
+            }
+            .seperator {
+                margin: 10px 0 10px 0;
+            }
+            .variable_name {
+            }
+            .variable {
+                min-width: 0px;
+                display: inline-block;
+            }
+            .value {
+                display: inline-block;
+                text-align: left;
+                margin: 0 2px 0 0;
+            }
+            .unit {
+                min-width: 80px;
+                display: inline-block;
+            }
+            .in {
+            }
+            .slider {
+                min-width: 150px;
+            }
+            #run_sim_btn {
+                background-color: #43bc9c;
+                color: white;
+                margin: 5px 0 5px 0;
+            }
+            .variable_output {
+                margin: 0 10px 0 0;
+            }
+            .input_container {
+                min-width: 260px;
+                /*width: 45%;*/
+                background-color: #e8eeef;
+                margin: 3px;
+                border-radius: 5px;
+                padding: 5px;
+            }
+            .output_container {
+                min-width: 117px;
+                /*width: 45%;*/
+                background-color: #e8eeef;
+                margin: 3px;
+                border-radius: 5px;
+                padding: 5px;
+            }
+            .parameter_container {
+                background-color: #f4f7f8;
+                margin: 5px;
+                padding: 5px;
+                border-radius: 5px;
+                font-family: "Poppins", sans-serif;
+                min-width: 320px;
+            }
+            .plot_container {
+                padding: 10px;
+            }
+            .out {
+                border-color: #43bc9c;
+                border-width: 2px;
+                border-style: solid;
+            }
+            .title {
+                color: #43bc9c;
+                text-align: center;
+                font-size: 30px;
+                font-family: "Poppins", sans-serif;
+                font-weight: 1000;
+                min-height: 30px;
+            }
+            .input-output-seperator {
+            }
+            input[type="range"] {
+                accent-color: #43bc9c;
+            }
+            input[type="checkbox"] {
+                accent-color: #43bc9c;
+            }
+            .reset-button {
+                text-align: center;
+                color: white;
+                background-color: #43bc9c;
+                padding: 10px;
+                border-radius: 5px;
+                font-weight: bold;
+                cursor: pointer;
+                transition: background-color 0.2s ease;
+                user-select: none;
+            }
+            .reset-button:hover {
+                background-color: #3ca78a;
+            }
+            .reset-button:active {
+                background-color: #328c75;
+            }
+            .ventilation-mode-container {
+                display: flex;
+                justify-content: space-between;
+                background-color: #e8eeef;
+                margin: 5px;
+                border-radius: 5px;
+                padding: 5px;
+            }
+            .mode-slider {
+                width: 100%;
+                margin: 0 10px 0 10px;
+                min-width: 40px;
+            }
+            .mode-name {
+                min-width: 150px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container row">
+            <div class="left">
+                <div class="title">Ventilator Simulation</div>
+            </div>
+            <div class="right"></div>
+
+            <div class="left" class="column">
+                <div class="parameter_container">
+                    <div class="ventilation-mode-container">
+                        <div class="mode-name" style="text-align: right;" title="Enable pressure-controlled continuous mechanical ventilation">
+                            Pressure Controlled
+                        </div>
+                        <input class="mode-slider" type="range" id="ventilationMode" min="0" max="1" step="1" value="0" />
+                        <div class="mode-name" style="text-align: left;" title="Enable volume-controlled continuous mechanical ventilation">Volume controlled</div>
+                    </div>
+                </div>
+                <!-- ETT - Tube Resistance Parameters Panel -->
+                <div class="parameter_container">
+                    <div class="headline">ETT - tube resistance parameters</div>
+                    <div class="seperator"></div>
+                    <div class="row">
+                        <div class="input_container">
+                            <div class="variable_name" title="Inner diameter of the endotracheal tube">
+                                Endotracheal tube inner diameter
+                            </div>
+                            <div class="row_l in">
+                                <label class="variable" for="ETT_ID"></label>
+                                <input class="slider" type="range" id="ETT_ID" min="6" max="10" value="7.0" step="0.1" />
+                                <div class="value" id="ETT_ID_value">7.0</div>
+                                <div class="unit">mm</div>
+                            </div>
+                        </div>
+                        <div class="input_container">
+                            <div class="variable_name" title="Outer diameter of the bronchoscopy catheter (Maximum value: Endotracheal tube inner diameter - 0.5mm)">
+                                Bronchoscopy catheter outer diameter
+                            </div>
+                            <div class="row_l in">
+                                <label class="variable" for="Cath_OD"></label>
+                                <input class="slider" type="range" id="Cath_OD" min="3.7" max="6.0" value="0.0" step="0.1" />
+                                <div class="value" id="Cath_OD_value">0.0</div>
+                                <div class="unit">mm</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Patient Parameters Panel -->
+                <div class="parameter_container">
+                    <div class="headline">Patient parameters</div>
+                    <div class="seperator"></div>
+                    <div class="row">
+                        <div class="input_container">
+                            <div class="variable_name" title="Patient's total static respiratory compliance">
+                                Total (static) respiratory compliance
+                            </div>
+                            <div class="row_l in">
+                                <label class="variable" for="C"></label>
+                                <input class="slider" type="range" id="C" min="5" max="500" value="50" step="1" />
+                                <div class="value" id="C_value">50</div>
+                                <div class="unit">ml/mbar</div>
+                            </div>
+                        </div>
+
+                        <div class="input_container">
+                            <div class="variable_name" title="Patient's total airway resistance">Airway resistance</div>
+                            <div class="row_l in">
+                                <label class="variable" for="R_aw"></label>
+                                <input class="slider" type="range" id="R_aw" min="1" max="100" value="1" step="1" />
+                                <div class="value" id="R_aw_value">1</div>
+                                <div class="unit">mbar/(L/s)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="input_container">
+                            <div
+                                class="variable_name"
+                                title="Maximum inspiratory (negative) muscular pressure of the patient during spontaneous breathing. The time course of force generation has the shape of a cosine function from 0 to 180 degrees."
+                            >
+                                Max. inspiratory muscular pressure
+                            </div>
+                            <div class="row_l in">
+                                <label class="variable" for="PMusMax"></label>
+                                <input class="slider" type="range" id="PMusMax" min="0" max="100" value="5.0" step="0.1" />
+                                <div class="value" id="PMusMax_value">5.0</div>
+                                <div class="unit">mbar</div>
+                            </div>
+                        </div>
+                        <div class="input_container">
+                            <div
+                                class="variable_name"
+                                title="Time for relaxing the muscles at the end of the inspiration. The time course of force generation has the shape of a cosine function from 180 to 360 degrees. (Maximum muscle relaxation time is the total expiratory time)"
+                            >
+                                Muscle relaxation time
+                            </div>
+                            <div class="row_l in">
+                                <label class="variable" for="mus_relax_time"></label>
+                                <input class="slider" type="range" id="mus_relax_time" min="0" max="1" value="0.4" step="0.1" />
+                                <div class="value" id="mus_relax_time_value">0.4</div>
+                                <div class="unit">s</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="input_container">
+                            <div class="variable_name" title="Number of breaths to be simulated.">Number of breaths</div>
+                            <div class="row_l in">
+                                <label class="variable" for="NoB"></label>
+                                <input class="slider" type="range" id="NoB" min="1" max="50" value="5" step="1" />
+                                <div class="value" id="NoB_value">5</div>
+                                <div class="unit"></div>
+                            </div>
+                        </div>
+                        <div class="input_container">
+                            <div class="row_l in">
+                                <input type="checkbox" id="SP" checked />
+                                <div class="variable_name_chkbx" title="Enable spontaneous breathing (respiratory muscles are active, only pressure controlled mode is possible) ">
+                                    Spontaneous breathing
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="time_controls_container">
+                        <div class="row">
+                            <div class="input_container">
+                                <div
+                                    class="variable_name"
+                                    title="Inspiratory time (either the duration of active inspiration if 'spontaneous breathing' is selected, or the duration of pressure or flow delivery by the ventilator when the patient is not spontaneously breathing)"
+                                >
+                                    Inspiratory time
+                                </div>
+                                <div class="row_l in">
+                                    <label class="variable" for="ti"></label>
+                                    <input class="slider" type="range" id="ti" min="0.1" max="10" value="1" step="0.1" />
+                                    <div class="value" id="ti_value">1</div>
+                                    <div class="unit">s</div>
+                                </div>
+                            </div>
+                            <div class="input_container">
+                                <div
+                                    class="variable_name"
+                                    title="Expiratory time (the duration of respiratory muscle relaxation if 'spontaneous breathing' is selected, or the duration of PEEP application (expiratory valve opening) by the ventilator when the patient is not spontaneously breathing)"
+                                >
+                                    Expiratory time
+                                </div>
+                                <div class="row_l in">
+                                    <label class="variable" for="te"></label>
+                                    <input class="slider" type="range" id="te" min="0.1" max="10" value="1" step="0.1" />
+                                    <div class="value" id="te_value">1</div>
+                                    <div class="unit">s</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="row_l">
+                                <div class="row_l">
+                                    <div class="output_container out">
+                                        <div class="row_l in">
+                                            <div class="variable_output" title="Respiratory rate (breaths/min)">RR</div>
+                                            <div class="value" id="rr_value"></div>
+                                            <div>b/min</div>
+                                        </div>
+                                    </div>
+                                    <div class="output_container out">
+                                        <div class="row_l in">
+                                            <div class="variable_output" title="Inspiratory : Expiratory time ratio">I:E ratio</div>
+                                            <div class="value" id="i_e_value">1 : 1</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--                            <div class="row">-->
+                            <!--                                <div class="input_container out">-->
+                            <!--                                    <div class="row_l">-->
+                            <!--                                        <div class="row_l in">-->
+                            <!--                                            <div class="variable_output" title="Inspiratory : Expiratory time ratio">I:E ratio</div>-->
+                            <!--                                            <div class="value" id="i_e_value">1 : 1</div>-->
+                            <!--                                        </div>-->
+                            <!--                                    </div>-->
+                            <!--                                    <div class="input_container out">-->
+                            <!--                                        <div class="row_l in">-->
+                            <!--                                            <div class="variable_output" title="Inspiratory : Expiratory time ratio">I:E ratio</div>-->
+                            <!--                                            <div class="value" id="rr_value">1 : 1</div>-->
+                            <!--                                        </div>-->
+                            <!--                                    </div>-->
+                            <!--                                </div>-->
+                            <!--                            </div>-->
+
+                            <div class="input_container">
+                                <div class="row_l in">
+                                    <input type="checkbox" id="fix_ier" />
+                                    <div
+                                        class="variable_name_chkbx"
+                                        title="Lock the Inspiratory : Expiratory time ratio. When enabled, adjusting Inspiratory time automatically updates Expiratory time (and vice versa) to maintain the ratio. Since the sliders move in 0.1-second increments, the exact ratio may vary slightly."
+                                    >
+                                        Fix I:E ratio
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="patient_time_slot"></div>
+                </div>
+
+                <!-- Ventilator Parameters Panel -->
+                <div class="parameter_container">
+                    <div class="headline">Ventilator parameters</div>
+                    <div class="seperator"></div>
+                    <div id="ventilator_time_slot"></div>
+                    <div class="row">
+                        <div class="input_container">
+                            <div class="variable_name" title="Inspiratory pressure support (above PEEP)">
+                                Inspiratory pressure support
+                            </div>
+                            <div class="row_l in">
+                                <div class="variable" for="IPS"></div>
+                                <input class="slider" type="range" id="IPS" min="0" max="50" value="15" step="1" />
+                                <div class="value" id="IPS_value">15</div>
+                                <div class="unit">mbar</div>
+                            </div>
+                        </div>
+                        <div class="input_container">
+                            <div class="variable_name" title="Positive end-expiratory pressure">PEEP</div>
+                            <div class="row_l in">
+                                <label class="variable" for="PEEP"></label>
+                                <input class="slider" type="range" id="PEEP" min="0" max="50" value="5" step="1" />
+                                <div class="value" id="PEEP_value">5</div>
+                                <div class="unit">mbar</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="input_container">
+                            <div class="variable_name" title="Tidal volume delivered by constant flow in volume controlled mode.">
+                                Tidal volume
+                            </div>
+                            <div class="row_l in">
+                                <label class="variable" for="VT"></label>
+                                <input class="slider" type="range" id="VT" min="0" max="2500" value="500" step="10" />
+                                <div class="value" id="VT_value">500</div>
+                                <div class="unit">ml</div>
+                            </div>
+                        </div>
+                        <div class="input_container">
+                            <div class="variable_name" title="Trigger pressure below PEEP for initiating an inspiratory pressure support cycle">
+                                Trigger pressure
+                            </div>
+                            <div class="row_l in">
+                                <label class="variable" for="PTrigger"></label>
+                                <input class="slider" type="range" id="PTrigger" min="0" max="10" value="0.5" step="0.1" />
+                                <div class="value" id="PTrigger_value">0.5</div>
+                                <div class="unit">mbar</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="input_container">
+                            <div class="variable_name" title="Rise time of the pressure support from PEEP to IPS level">
+                                Pressure rise time
+                            </div>
+                            <div class="row_l in">
+                                <label class="variable" for="t_rise"></label>
+                                <input class="slider" type="range" id="t_rise" min="0" max="10" value="0.2" step="0.1" />
+                                <div class="value" id="t_rise_value">0.2</div>
+                                <div class="unit">s</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resistance and Demand Flow Control Parameters Panel -->
+                <div class="parameter_container">
+                    <div class="headline">Expiratory valve resistance and demand flow control parameters of the ventilator</div>
+                    <div class="seperator"></div>
+                    <div class="row">
+                        <div class="input_container">
+                            <div class="variable_name" title="Resistance of the expiratory (PEEP) valve">
+                                PEEP valve resistance
+                            </div>
+                            <div class="row_l in">
+                                <label class="variable" for="R_PEEPvalve"></label>
+                                <input class="slider" type="range" id="R_PEEPvalve" min="0" max="20" value="2" step="0.1" />
+                                <div class="value" id="R_PEEPvalve_value">2</div>
+                                <div class="unit">mbar/(L/s)</div>
+                            </div>
+                        </div>
+                        <div class="input_container">
+                            <div
+                                class="variable_name"
+                                title="Integral control parameter for the demand flow controller. Larger values lead to more accurate and faster control but can cause larger pressure oscillations. User can adjust this parameter together with the cutoff frequency parameter to mimic the behaviour of a real ventilator."
+                            >
+                                Integral control parameter
+                            </div>
+                            <div class="row_l in">
+                                <label class="variable" for="Integral"></label>
+                                <input class="slider" type="range" id="Integral" min="0.01" max="10" value="2" step="0.01" />
+                                <div class="value" id="Integral_value">2</div>
+                                <div class="unit"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="input_container">
+                            <div
+                                class="variable_name"
+                                title="Cutoff frequency of the demand flow controller. Modulates the frequency and magnitude of the airway pressure oscillations. Users can adjust this parameter together with integral control parameter to mimic the behaviour of a real ventilator."
+                            >
+                                Cutoff frequency
+                            </div>
+                            <div class="row_l in">
+                                <label class="variable" for="f_cutoff"></label>
+                                <input class="slider" type="range" id="f_cutoff" min="0.1" max="50" value="6" step="0.1" />
+                                <div class="value" id="f_cutoff_value">6</div>
+                                <div class="unit">Hz</div>
+                            </div>
+                        </div>
+                        <div class="input_container">
+                            <div class="row_l in">
+                                <input type="checkbox" id="Ideal" />
+                                <div
+                                    class="variable_name_chkbx"
+                                    title="Set to True to mimic an ideal ventilator that delivers airway pressure exactly as intended. Has only effect in pressure controlled mode and not in volume controlled mode."
+                                >
+                                    Ideal Ventilator
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-output-seperator"></div>
+                <!-- Output Panel -->
+                <div class="parameter_container out">
+                    <div class="row">
+                        <div class="input_container">
+                            <div class="row_l">
+                                <div
+                                    class="variable_output"
+                                    title="Intrinsic PEEP = Alveolar pressure at the end of the second last expiration. In case of spontaneous breathing, the iPEEP is taken from the alveolar pressure prior to the onset of the inspiratory effort of the last breath."
+                                >
+                                    iPEEP
+                                </div>
+                                <div class="value" id="iPEEP_display"></div>
+                                <div class="unit">mbar</div>
+                            </div>
+                        </div>
+                        <div class="input_container">
+                            <div class="row_l">
+                                <div class="variable_output" title="Tidal Volume (VT). Computed as the average of the exhaled volume of the second last breath and the inhaled volume of the last breath.">
+                                    Tidal volume (VT)
+                                </div>
+                                <div class="value" id="VT_display"></div>
+                                <div class="unit">ml</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="parameter_container">
+                    <div class="reset-button">Reset to default values</div>
+                </div>
+                <div class="row parameter_container">
+                    <div class="hint"><strong>Hint:</strong> Hover over the parameters to get a tooltip.</div>
+                    <div class="hint"><strong>Hint:</strong> Use arrow keys to finetune parameters.</div>
+                </div>
+            </div>
+            <div class="right" class="column">
+                <div class="parameter_container plot_container">
+                    <div id="plot1" style="width: 100%; height: 300px;"></div>
+                    <div id="plot2" style="width: 100%; height: 300px;"></div>
+                    <div id="plot3" style="width: 100%; height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+        <!-- ---------------------
+           Section: External Library
+           --------------------- -->
+        <!--        <script src="js/plotly.min.js"></script>-->
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        <!-- ---------------------
+           Section: JavaScript Code Overview and Parallels to Python
+           --------------------- -->
+        <script>
+            // =======================
+            // Utility Functions and Slider Update Handlers
+            // (Parallels simple helper functions in Python)
+            // =======================
+            function average(arr) {
+                if (!arr.length) return 0;
+                return arr.reduce((a, b) => a + b, 0) / arr.length;
+            }
+            document.querySelectorAll('input[type="range"]').forEach(function (slider) {
+                slider.addEventListener("input", function () {
+                    const displayEl = document.getElementById(slider.id + "_value");
+                    if (displayEl) {
+                        displayEl.innerText = slider.value;
+                    }
+                });
+            });
+
+            // =======================
+            // Synchronization Between Expiratory Time and Muscle Relaxation Time
+            // (Ensures mus_relax_time does not exceed te as in the Python adjustment)
+            // =======================
+            const teSlider = document.getElementById("te");
+            const teValue = document.getElementById("te_value");
+            const tiSlider = document.getElementById("ti");
+            const tiValue = document.getElementById("ti_value");
+            const rrDisplay = document.getElementById("rr_value");
+            const minTi = +tiSlider.min,
+                maxTi = +tiSlider.max;
+            const minTe = +teSlider.min,
+                maxTe = +teSlider.max;
+
+            const relaxSlider = document.getElementById("mus_relax_time");
+            const relaxValue = document.getElementById("mus_relax_time_value");
+            teSlider.addEventListener("input", function () {
+                teValue.textContent = parseFloat(teSlider.value).toFixed(1);
+                relaxSlider.max = teSlider.value;
+                if (parseFloat(relaxSlider.value) > parseFloat(teSlider.value)) {
+                    relaxSlider.value = teSlider.value;
+                    relaxValue.textContent = parseFloat(teSlider.value).toFixed(1);
+                }
+            });
+            relaxSlider.addEventListener("input", function () {
+                relaxValue.textContent = parseFloat(relaxSlider.value).toFixed(1);
+            });
+
+            const ventilationModeSlider = document.getElementById("ventilationMode");
+            const spCheckbox = document.getElementById("SP");
+            const pmusSlider = document.getElementById("PMusMax");
+            const pmusValue = document.getElementById("PMusMax_value");
+
+            const triseSlider = document.getElementById("t_rise");
+            const PTriggerSlider = document.getElementById("PTrigger");
+            const IPSSlider = document.getElementById("IPS");
+            const mus_relax_timeSlider = document.getElementById("mus_relax_time");
+            const VTSlider = document.getElementById("VT");
+            const idealCheckbox = document.getElementById("Ideal");
+            let VC;
+            // Update things when the slider changes
+            ventilationModeSlider.addEventListener("input", function () {
+                const modeValue = parseInt(ventilationModeSlider.value); // 0 = pressure, 1 = volume
+
+                if (modeValue === 1) {
+                    // Volume-controlled
+                    VC = true;
+                    spCheckbox.checked = false;
+                    spCheckbox.disabled = true;
+                    document.getElementById("SP").dispatchEvent(new Event("change"));
+
+                    triseSlider.disabled = true; //no pressure rise time
+                    PTriggerSlider.disabled = true; //no trigger pressure
+                    IPSSlider.disabled = true; //not inspiratory pressure support
+                    pmusSlider.disabled = true; //not max. inspiratory pressure
+                    pmusSlider.value = 0.0;
+                    pmusValue.textContent = "0.0";
+
+                    mus_relax_timeSlider.disabled = true; //no muscle relaxation time
+
+                    VTSlider.disabled = false;
+
+                    idealCheckbox.checked = true;
+                    idealCheckbox.disabled = true; // if VC --> ideal ventilator
+                    document.getElementById("Ideal").dispatchEvent(new Event("change"));
+                } else {
+                    VC = false;
+                    spCheckbox.disabled = false;
+
+                    triseSlider.disabled = false;
+                    PTriggerSlider.disabled = false;
+                    IPSSlider.disabled = false;
+                    pmusSlider.disabled = false;
+                    mus_relax_timeSlider.disabled = false;
+                    VTSlider.disabled = true;
+
+                    idealCheckbox.disabled = false; // if VC --> ideal ventilator
+                    document.getElementById("Ideal").dispatchEvent(new Event("change"));
+                }
+                // updateDisabledParameters(); // Reapply other UI rules if needed
+                runSimulation(); // Optional: rerun sim
+            });
+
+            spCheckbox.addEventListener("change", function () {
+                const isSpontaneous = spCheckbox.checked;
+
+                if (!isSpontaneous) {
+                    PTriggerSlider.disabled = true;
+                    pmusSlider.disabled = true;
+                    pmusSlider.value = 0.0;
+                    pmusValue.textContent = "0.0";
+                } else {
+                    PTriggerSlider.disabled = false;
+                    pmusSlider.disabled = false;
+                }
+            });
+
+            // const idealCheckbox = document.getElementById("Ideal");
+            const fCutoffSlider = document.getElementById("f_cutoff");
+            const integralSlider = document.getElementById("Integral");
+
+            idealCheckbox.addEventListener("change", function () {
+                const isIdeal = idealCheckbox.checked;
+
+                if (isIdeal) {
+                    fCutoffSlider.disabled = true;
+                    integralSlider.disabled = true;
+                } else {
+                    fCutoffSlider.disabled = false;
+                    integralSlider.disabled = false;
+                }
+            });
+
+            // =======================
+            // Flow Termination Parameter Update
+            // (Adjusts FlowTermination based on IPS value; similar to conditional logic in Python)
+            // =======================
+            let FlowTermination = 0.01;
+            const ipsSlider = document.getElementById("IPS");
+            function updateFlowTermination() {
+                const IPS = parseFloat(ipsSlider.value);
+                if (IPS > 0.5) {
+                    FlowTermination = 0.25;
+                } else {
+                    FlowTermination = 0.01;
+                }
+                console.log("FlowTermination =", FlowTermination);
+            }
+            updateFlowTermination();
+            ipsSlider.addEventListener("input", updateFlowTermination);
+
+            // =======================
+            // Endotracheal Tube and Catheter Diameter Constraint
+            // (Ensures bronchoscopy catheter’s outer diameter is 0.5 mm smaller than the ETT inner diameter,
+            //  mirroring the check in the Python script)
+            // =======================
+            document.addEventListener("DOMContentLoaded", function () {
+                const ettSlider = document.getElementById("ETT_ID");
+                const ettValue = document.getElementById("ETT_ID_value");
+                const cathSlider = document.getElementById("Cath_OD");
+                const cathValue = document.getElementById("Cath_OD_value");
+                function updateCathConstraint() {
+                    const ETT_ID = parseFloat(ettSlider.value);
+                    // “maxCath” is still capped at ETT_ID–0.5, but never above 5.7:
+                    const maxCath = Math.min(6, ETT_ID - 0.5);
+
+                    // 1) move the right‐hand end of the slider:
+                    cathSlider.max = maxCath.toFixed(1);
+
+                    // 2) clamp any overshoot:
+                    let raw = parseFloat(cathSlider.value);
+                    if (raw > maxCath) raw = maxCath;
+                    cathSlider.value = raw.toFixed(1);
+
+                    // 3) map the special 3.7 → 0 for display:
+                    const display = raw === 3.7 ? 0.0 : raw;
+                    cathValue.textContent = display.toFixed(1);
+                }
+
+                ettSlider.addEventListener("input", () => {
+                    ettValue.textContent = (+ettSlider.value).toFixed(1);
+                    updateCathConstraint();
+                });
+                cathSlider.addEventListener("input", () => {
+                    // note: display is now handled _inside_ updateCathConstraint
+                    updateCathConstraint();
+                });
+                ettValue.textContent = parseFloat(ettSlider.value).toFixed(1);
+                cathValue.textContent = parseFloat(cathSlider.value).toFixed(1);
+                updateCathConstraint();
+            });
+
+            // =======================
+            // Root Finding with Secant Method
+            // (Mimics SciPy’s fsolve in the Python script)
+            // =======================
+            function fsolve(func, initialGuess, params) {
+                const tol = 1e-6;
+                const maxIter = 100;
+                let x0 = initialGuess;
+                let x1 = initialGuess !== 0 ? initialGuess * 1.1 : 1e-3;
+                for (let i = 0; i < maxIter; i++) {
+                    const f0 = func(x0, params);
+                    const f1 = func(x1, params);
+                    if (Math.abs(f1 - f0) < 1e-12) break;
+                    const x_new = x1 - (f1 * (x1 - x0)) / (f1 - f0);
+                    if (Math.abs(x_new - x1) < tol) return x_new;
+                    x0 = x1;
+                    x1 = x_new;
+                }
+                return x1;
+            }
+
+            // --- Helper function: findPeaks ---
+            // This function finds indices of local maxima in an array.
+            // It also applies a "distance" filter (i.e. once a peak is selected,
+            // all other candidates within "distance" samples are suppressed).
+            // Options should include a property "distance" (in sample points).
+            function findPeaks(arr, minDistance = 1) {
+                if (arr.length < 3) {
+                    return [];
+                }
+
+                // Step 1. Identify candidate peaks based on the sign change.
+                // A valid peak requires:
+                // - an increase from the previous element (arr[i] > arr[i-1]),
+                // - then (possibly) a plateau of equal values,
+                // - and finally a decrease (arr[j] > arr[j+1]) when the plateau ends.
+                const candidatePeaks = [];
+
+                // We'll scan from index 1 to arr.length-2 (ensuring both left/right neighbors exist)
+                for (let i = 1; i < arr.length - 1; i++) {
+                    // Check for an upward slope or plateau start.
+                    if (arr[i] > arr[i - 1]) {
+                        // Handle plateaus: extend i until the plateau ends.
+                        let j = i;
+                        // Continue through plateau values (j stops at the last index where arr[j] equals arr[i])
+                        while (j < arr.length - 1 && arr[j] === arr[j + 1]) {
+                            j++;
+                        }
+                        // Now j is at the end of a plateau. Check if the plateau forms a peak.
+                        if (j < arr.length - 1 && arr[j] > arr[j + 1]) {
+                            // For a plateau peak, choose a representative index.
+                            // Here, we take the midpoint of the plateau:
+                            const peakIndex = Math.floor((i + j) / 2);
+                            candidatePeaks.push({ index: peakIndex, value: arr[peakIndex] });
+                            // Skip ahead to j to avoid re‐detecting parts of the same plateau.
+                            i = j;
+                        }
+                        // If the plateau does not descend, it is not considered a local maximum.
+                    }
+                }
+
+                // Step 2. Enforce the minimum distance between peaks.
+                // We will use a non-maximum suppression approach:
+                // sort candidates in descending order (by value) and then keep only those
+                // that are sufficiently far from any already selected peak.
+                candidatePeaks.sort((a, b) => b.value - a.value); // highest peaks first
+
+                const finalPeaks = [];
+                candidatePeaks.forEach((peak) => {
+                    // Check if this candidate is at least minDistance away from every peak already selected.
+                    const tooClose = finalPeaks.some((selectedPeak) => Math.abs(peak.index - selectedPeak.index) < minDistance);
+                    if (!tooClose) {
+                        finalPeaks.push(peak);
+                    }
+                });
+
+                // Finally, sort the accepted peaks by their original order (ascending index)
+                finalPeaks.sort((a, b) => a.index - b.index);
+
+                // Return only the indices (you might want to return the peak values as well, if needed)
+                return finalPeaks.map((peak) => peak.index);
+            }
+
+            // =======================
+            // Flow Iteration Functions for Inspiration and Expiration
+            // (Compute residuals for iteratively solving the flow, similar to Python functions)
+            // =======================
+            function iterate_flow_in(flow, params) {
+                const { R_aw, k1_in, k2_in, V_last, dt, C, P_mus_last, PS } = params;
+                const R = R_aw + (k1_in * Math.abs(flow) + k2_in * (flow * flow)) / (Math.abs(flow) + 1e-6);
+                const predicted_flow = (PS - (((V_last + flow * dt) * 1000.0) / C - P_mus_last)) / R;
+                return flow - predicted_flow;
+            }
+            function iterate_flow_ex(flow, params) {
+                const { R_aw, R_PEEPvalve, k1_ex, k2_ex, V_last, dt, C, P_mus_last } = params;
+                const R = R_aw + R_PEEPvalve + (k1_ex * Math.abs(flow) + k2_ex * (flow * flow)) / (Math.abs(flow) + 1e-6);
+                const predicted_flow = (P_mus_last - ((V_last + flow * dt) * 1000.0) / C) / R;
+                return flow - predicted_flow;
+            }
+
+            // =======================
+            // Main Simulation Function
+            // (Implements the mechanical ventilation simulation loop, closely paralleling the Python simulation)
+            // =======================
+            function runSimulation() {
+                // Retrieve simulation parameters from HTML inputs (similar to Python variable assignments)
+                const C = parseFloat(document.getElementById("C").value);
+                const ti = parseFloat(document.getElementById("ti").value);
+                const te = parseFloat(document.getElementById("te").value);
+                const PMusMax = parseFloat(document.getElementById("PMusMax").value);
+                const NoB = parseFloat(document.getElementById("NoB").value);
+                const R_aw = parseFloat(document.getElementById("R_aw").value);
+                const R_PEEPvalve = parseFloat(document.getElementById("R_PEEPvalve").value);
+                const f_cutoff = parseFloat(document.getElementById("f_cutoff").value);
+                const Integral = parseFloat(document.getElementById("Integral").value);
+                // const VC = document.getElementById("VC").checked;
+                const VC = parseInt(document.getElementById("ventilationMode").value) === 1;
+                const IPS = parseFloat(document.getElementById("IPS").value);
+                const VT = parseFloat(document.getElementById("VT").value);
+                // const t_rise = parseFloat(document.getElementById("t_rise").value);
+                let t_rise = parseFloat(document.getElementById("t_rise").value);
+                if (t_rise === 0) t_rise = 0.01;
+                const PEEP = parseFloat(document.getElementById("PEEP").value);
+                const SP = document.getElementById("SP").checked;
+                const PTrigger = parseFloat(document.getElementById("PTrigger").value);
+                const mus_relax_time = parseFloat(document.getElementById("mus_relax_time").value);
+                const ETT_ID = parseFloat(document.getElementById("ETT_ID").value);
+                const rawCath = parseFloat(document.getElementById("Cath_OD").value);
+                // that single “3.7” notch becomes 0:
+                const Cath_OD = rawCath === 3.7 ? 0 : rawCath;
+                const Ideal = document.getElementById("Ideal").checked;
+                const dt = 0.001;
+                let k1, beta;
+                if (Cath_OD > 0) {
+                    beta = -5;
+                    k1 = 72387;
+                    console.log("Obstructed");
+                } else {
+                    beta = -4;
+                    k1 = 6652;
+                    console.log("Unobstructed");
+                }
+                const deff = Math.sqrt(Math.max(ETT_ID * ETT_ID - Cath_OD * Cath_OD, 0));
+                const k1_in = k1 * Math.pow(deff, beta);
+                const k2_in = 4 * k1_in; //changed from 4.3 to 4
+                const k1_ex = k1 * Math.pow(deff, beta);
+                const k2_ex = 4 * k1_ex; //changed from 4.3 to
+                const i_e_r = ti / te;
+                const rr = 60 / (ti + te);
+                const T = 60 / rr;
+                const flow_i = VT / ti / 1000.0;
+                const smoothing = Math.exp(-2 * Math.PI * f_cutoff * dt);
+
+                // Initialize simulation arrays and variables (similar to initializing lists in Python)
+                const F = [0],
+                    V = [0],
+                    P_aw = [PEEP],
+                    P_trach = [PEEP],
+                    P_alv = [PEEP],
+                    P_mus = [0],
+                    t_arr = [0];
+                const support_start = [],
+                    support_end = [];
+                let runtime = 0,
+                    R_current = R_aw,
+                    flow = 0.001,
+                    FlowPeakIns = 0,
+                    isInspiration = false,
+                    ErrorIntegral = 0,
+                    PS = 0,
+                    TriggertimeIns = 0;
+                const overtime = 0.5;
+
+                // Main simulation loop (following the Python while-loop structure)
+                while (runtime < NoB * T + overtime) {
+                    const t_cycle = runtime % T;
+                    if (t_cycle < dt) {
+                        console.log("breath #", Math.floor(runtime / T));
+                    }
+                    // Compute muscle effort
+                    if (t_cycle <= ti) {
+                        P_mus.push(PMusMax * 0.5 * (1 - Math.cos((t_cycle / ti) * Math.PI)));
+                    } else {
+                        if (t_cycle < ti + mus_relax_time) {
+                            P_mus.push(PMusMax * 0.5 * (1 + Math.cos(((t_cycle - ti) / mus_relax_time) * Math.PI)));
+                        } else {
+                            P_mus.push(0);
+                        }
+                    }
+                    // Determine inspiration or expiration; follows Python conditional logic
+                    if (!SP) {
+                        if (t_cycle <= ti) {
+                            isInspiration = true;
+                            TriggertimeIns = runtime - t_cycle;
+                        } else {
+                            isInspiration = false;
+                            ErrorIntegral = 0;
+                        }
+                    }
+                    if (isInspiration) {
+                        if (VC) {
+                            flow = flow_i;
+                        } else {
+                            if (!SP) {
+                                PS = t_cycle <= t_rise ? (IPS * t_cycle) / t_rise : IPS;
+                            } else {
+                                PS = runtime <= TriggertimeIns + t_rise ? (IPS * (runtime - TriggertimeIns)) / t_rise : IPS;
+                            }
+                            if (Ideal) {
+                                const params_in = {
+                                    R_aw: R_aw,
+                                    k1_in: k1_in,
+                                    k2_in: k2_in,
+                                    V_last: V[V.length - 1],
+                                    dt: dt,
+                                    C: C,
+                                    P_mus_last: P_mus[P_mus.length - 1],
+                                    PS: PS,
+                                };
+                                flow = fsolve(iterate_flow_in, 1, params_in);
+                                if (flow < 0) flow = 0;
+                            } else {
+                                const Pmeas = P_aw[P_aw.length - 1];
+                                const Error = PEEP + PS - Pmeas;
+                                ErrorIntegral += Error * Integral * dt;
+                                flow = smoothing * F[F.length - 1] + (1 - smoothing) * ErrorIntegral;
+                            }
+                            if (flow > FlowPeakIns && flow > 0) {
+                                FlowPeakIns = flow;
+                            }
+                            if (flow < FlowTermination * FlowPeakIns && SP) {
+                                isInspiration = false;
+                                support_end.push(Math.floor(runtime / dt));
+                                ErrorIntegral = 0;
+                                R_current = R_aw + R_PEEPvalve + k1_ex;
+                                FlowPeakIns = -2;
+                            } else {
+                                R_current = R_aw + (k1_in * Math.pow(Math.abs(flow), k2_in)) / (Math.abs(flow) + 1e-6);
+                            }
+                        }
+                    } else {
+                        PS = 0;
+                        const params_ex = {
+                            R_aw: R_aw,
+                            R_PEEPvalve: R_PEEPvalve,
+                            k1_ex: k1_ex,
+                            k2_ex: k2_ex,
+                            V_last: V[V.length - 1],
+                            dt: dt,
+                            C: C,
+                            P_mus_last: P_mus[P_mus.length - 1],
+                        };
+                        flow = fsolve(iterate_flow_ex, -1, params_ex);
+                        if (flow > 0) flow = 0;
+                    }
+                    F.push(flow);
+                    V.push(V[V.length - 1] + flow * dt);
+                    const P_alv_new = PEEP + (V[V.length - 1] * 1000.0) / C - P_mus[P_mus.length - 1];
+                    P_alv.push(P_alv_new);
+                    const P_trach_new = P_alv_new + flow * R_aw;
+                    P_trach.push(P_trach_new);
+                    let dP_ETT;
+                    if (flow > 0) {
+                        dP_ETT = k1_in * flow + k2_in * (flow * flow);
+                    } else {
+                        dP_ETT = k1_ex * flow - k2_ex * (flow * flow);
+                    }
+                    P_aw.push(P_trach_new + dP_ETT);
+                    runtime += dt;
+                    t_arr.push(runtime);
+
+                    if (!VC && SP) {
+                        if (!isInspiration && P_aw[P_aw.length - 1] < PEEP - PTrigger) {
+                            TriggertimeIns = runtime;
+                            isInspiration = true;
+                            support_start.push(Math.floor(runtime / dt));
+                        } else if (isInspiration && flow > 0 && F[F.length - 1] < FlowTermination * FlowPeakIns) {
+                            isInspiration = false;
+                            support_end.push(Math.floor(runtime / dt));
+                            ErrorIntegral = 0;
+                            R_current = R_aw + R_PEEPvalve + k1_ex;
+                            FlowPeakIns = -2;
+                        }
+                    }
+                } // End simulation loop
+
+                // Compute indices for the last breath
+                const in_start = Math.floor(((NoB - 1) * T) / dt);
+                const in_end = Math.floor(((NoB - 1) * T + ti) / dt);
+                const ex_start = Math.floor(((NoB - 1) * T + ti + dt) / dt);
+                const ex_end = Math.floor((NoB * T - dt) / dt);
+                const iPEEP = P_alv[in_start];
+                const Palv_max = P_alv[ex_start - 1];
+                const Paw_max = P_aw[ex_start - 1];
+                let breath_volume, breath_duration, Vmin;
+                let VT_final, iPEEP_final;
+                if (SP) {
+                    const distanceVal = (ti + te - 0.1) / dt;
+                    // Find the indices of the local maxima in V.
+                    const maxima = findPeaks(V, { distance: distanceVal });
+                    console.log(maxima);
+                    // Find minima by finding peaks in the negative of V.
+                    const negV = V.map((val) => -val);
+                    const minima = findPeaks(negV, { distance: distanceVal });
+                    console.log(minima);
+                    // Only proceed if we have at least one maximum and a minimum preceding the last maximum.
+                    if (maxima.length > 0 && minima.some((m) => m < maxima[maxima.length - 1])) {
+                        // last_minimum: maximum (last) index among minima with index less than the last maximum.
+                        const lastMax = maxima[maxima.length - 1];
+                        const candidateMinima = minima.filter((idx) => idx < lastMax);
+                        const last_minimum = candidateMinima.length > 0 ? Math.max(...candidateMinima) : 0;
+                        console.log(last_minimum, "last min");
+
+                        // second_last_maximum: maximum among those maxima with index less than last_minimum.
+                        const candidateMaxima = maxima.filter((idx) => idx < last_minimum);
+                        const second_last_maximum = candidateMaxima.length > 0 ? Math.max(...candidateMaxima) : 0;
+
+                        breath_volume = 0.5 * (V[second_last_maximum] - V[last_minimum] + (V[maxima[maxima.length - 1]] - V[last_minimum]));
+                        Vmin = (breath_volume * 60) / ((maxima[maxima.length - 1] - second_last_maximum) * dt);
+
+                        // You can continue to compute breath duration from support_start if needed.
+                        breath_duration = support_start.slice(1).map((start, i) => (start - support_start[i]) * dt);
+
+                        VT_final = (1000 * breath_volume).toFixed(0);
+                        iPEEP_final = iPEEP.toFixed(1);
+                        console.log(`iPEEP = ${iPEEP_final}  mbar`);
+                        console.log(`Palv_max = ${Palv_max.toFixed(12)}  mbar`);
+                        console.log(`Paw_max = ${Paw_max.toFixed(12)}  mbar`);
+                        const avg_dur = average(breath_duration);
+                        const rr = 60 / avg_dur;
+                        console.log(`rr = ${rr.toFixed(2)}  br/min`);
+                        console.log(`VT = ${VT_final}  ml`);
+                        console.log(`Vmin = ${Vmin.toFixed(2)}  L/min`);
+                    }
+                } else {
+                    breath_volume = 0.5 * (V[in_end] - V[in_start] + V[ex_start] - V[ex_end]);
+                    breath_duration = T;
+                    Vmin = (breath_volume * 60) / T;
+                    const rr = 60 / T;
+                    VT_final = (1000 * breath_volume).toFixed(0);
+                    iPEEP_final = iPEEP.toFixed(1);
+                    console.log(`iPEEP = ${iPEEP_final}  mbar`);
+                    console.log(`Palv_max = ${Palv_max.toFixed(12)}  mbar`);
+                    console.log(`Paw_max = ${Paw_max.toFixed(12)}  mbar`);
+                    console.log(`rr = ${rr.toFixed(2)}  br/min`);
+                    console.log(`VT = ${VT_final}  ml`);
+                    console.log(`Vmin = ${Vmin.toFixed(2)}  L/min`);
+                }
+                document.getElementById("iPEEP_display").innerText = iPEEP_final;
+                document.getElementById("VT_display").innerText = VT_final;
+                console.log("Simulation complete.");
+                console.log("Final simulation time:", runtime);
+                console.log("Last breath indices - Inspiration start:", in_start, "end:", in_end, "Expiration start:", ex_start, "end:", ex_end);
+                plotResults(NoB, T, overtime, dt, PEEP, ti, t_arr, F, V, P_aw, P_trach, P_alv, P_mus, support_start, support_end);
+            }
+
+            // =======================
+            // Plotting Function using Plotly
+            // (Creates three plots—pressures, flow, and volume—mimicking the Python Matplotlib plots)
+            // =======================
+            function plotResults(NoB, T, overtime, dt, PEEP, ti, t_arr, F, V, P_aw, P_trach, P_alv, P_mus, support_start, support_end) {
+                const n = t_arr.length;
+                const a = Math.floor((-NoB * T - overtime) / dt);
+                const b = Math.floor(-overtime / dt);
+                const startIdx = n + a;
+                const endIdx = n + b;
+                const t_plot = t_arr.slice(startIdx, endIdx);
+                const P_aw_plot = P_aw.slice(startIdx, endIdx);
+                const P_trach_plot = P_trach.slice(startIdx, endIdx);
+                const P_mus_plot = P_mus.slice(startIdx, endIdx);
+                const F_plot = F.slice(startIdx, endIdx);
+                const V_plot = V.slice(startIdx, endIdx);
+                const P_mus_neg = P_mus_plot.map((v) => -v);
+                const y_min1 = Math.min(...P_mus_neg) - 1;
+                const y_max1 = Math.max(Math.max(...P_aw_plot), Math.max(...P_trach_plot)) * 1.1;
+                const y_min2 = Math.min(-1, Math.min(...F_plot) - 0.1);
+                const y_max2 = Math.max(1, Math.max(...F_plot) + 0.1);
+                const y_min3 = -0.02;
+                const y_max3 = Math.max(...V_plot) + 0.02;
+                const C0 = "#1f77b4",
+                    C1 = "#ff7f0e",
+                    C2 = "#2ca02c",
+                    C3 = "#d62728";
+                const trace_peep = {
+                    x: t_plot,
+                    y: t_plot.map(() => PEEP),
+                    mode: "lines",
+                    name: "Positive End-Expiratory Pressure (PEEP)",
+                    line: { dash: "dash", color: "gray", width: 1 },
+                };
+                const trace_P_aw = {
+                    x: t_plot,
+                    y: P_aw_plot,
+                    mode: "lines",
+                    name: "Airway pressure",
+                    line: { color: C3, width: 2 },
+                };
+                const trace_P_trach = {
+                    x: t_plot,
+                    y: P_trach_plot,
+                    mode: "lines",
+                    name: "Tracheal pressure",
+                    line: { color: C0, width: 2 },
+                };
+                const trace_P_mus = {
+                    x: t_plot,
+                    y: P_mus_neg,
+                    mode: "lines",
+                    name: "Muscle (patient) pressure",
+                    line: { color: "gray", width: 2 },
+                };
+                const data1 = [trace_peep, trace_P_aw, trace_P_trach];
+
+                // Hide muscle pressure if SP is active
+                if (document.getElementById("SP").checked) {
+                    data1.push(trace_P_mus);
+                }
+                const layout1 = {
+                    xaxis: { title: "" },
+                    yaxis: { range: [y_min1, y_max1], title: "Pressure (mbar)" },
+                    shapes: [],
+                    margin: { l: 70, r: 50, t: 50, b: 50 },
+                    legend: { orientation: "h", y: 1.3, x: 0.5, xanchor: "center" },
+                };
+                support_start.forEach((s, i) => {
+                    const startTime = s * dt;
+                    const endTime = (support_end[i] || startTime) * dt;
+                    layout1.shapes.push({
+                        type: "rect",
+                        xref: "x",
+                        yref: "y",
+                        x0: startTime,
+                        x1: endTime,
+                        y0: PEEP,
+                        y1: y_max1,
+                        fillcolor: "gray",
+                        opacity: 0.1,
+                        line: { width: 1, color: "black" },
+                    });
+                });
+                let spontan_start = [],
+                    spontan_end = [];
+                for (let i = 0; i < NoB; i++) {
+                    spontan_start.push(i * T);
+                    spontan_end.push(i * T + ti);
+                }
+                spontan_start.forEach((s, i) => {
+                    const startTime = s;
+                    const endTime = spontan_end[i];
+                    layout1.shapes.push({
+                        type: "rect",
+                        xref: "x",
+                        yref: "y",
+                        x0: startTime,
+                        x1: endTime,
+                        y0: y_min1,
+                        y1: PEEP,
+                        fillcolor: "gray",
+                        opacity: 0.1,
+                        line: { width: 1, color: "black" },
+                    });
+                });
+                Plotly.newPlot("plot1", data1, layout1, { staticPlot: true, responsive: true });
+                const trace_F = {
+                    x: t_plot,
+                    y: F_plot,
+                    mode: "lines",
+                    name: "Flow",
+                    line: { color: C1, width: 2 },
+                };
+                const data2 = [trace_F];
+                const layout2 = {
+                    xaxis: { title: "" },
+                    yaxis: { range: [y_min2, y_max2], title: "Flow (L/s)" },
+                    margin: { l: 70, r: 50, t: 50, b: 50 },
+                    shapes: [],
+                };
+                Plotly.newPlot("plot2", data2, layout2, { responsive: true, staticPlot: true });
+                const trace_V = {
+                    x: t_plot,
+                    y: V_plot,
+                    mode: "lines",
+                    name: "Volume",
+                    line: { color: C2, width: 2 },
+                };
+                const data3 = [trace_V];
+                const layout3 = {
+                    xaxis: { title: "time (s)" },
+                    yaxis: { range: [y_min3, y_max3], title: "Volume (L)" },
+                    margin: { l: 70, r: 50, t: 50, b: 50 },
+                    shapes: [],
+                };
+                Plotly.newPlot("plot3", data3, layout3, { responsive: true, staticPlot: true });
+            }
+
+            // =======================
+            // Simulation Trigger and Debounced Event Listeners
+            // (Triggers simulation on page load and re-runs it when inputs change, similar to a Python GUI)
+            // =======================
+            window.addEventListener("load", runSimulation);
+            function debounce(func, delay) {
+                let timeout;
+                return function (...args) {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), delay);
+                };
+            }
+            const debouncedRunSim = debounce(runSimulation, 10);
+            document.querySelectorAll('input[type="range"]').forEach(function (slider) {
+                slider.addEventListener("input", function () {
+                    const val = slider.id === "t_rise" && slider.value === "0" ? "0.01" : slider.value;
+                    const valueElement = document.getElementById(slider.id + "_value");
+                    if (valueElement) {
+                        valueElement.innerText = val;
+                    }
+                    debouncedRunSim();
+                });
+            });
+            document.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) {
+                checkbox.addEventListener("change", function () {
+                    debouncedRunSim();
+                });
+            });
+            document.addEventListener("DOMContentLoaded", () => {
+                // Extract the reset logic into a separate function.
+                function resetForm() {
+                    document.querySelectorAll('input[type="range"]').forEach((slider) => {
+                        const defaultValue = slider.getAttribute("value");
+                        if (defaultValue !== null) {
+                            slider.value = defaultValue;
+                            const valueDisplay = document.getElementById(slider.id + "_value");
+                            if (valueDisplay) valueDisplay.innerText = defaultValue;
+                        }
+                    });
+                    const checkboxDefaults = { SP: true, Ideal: false, fix_ier: false };
+                    for (const id in checkboxDefaults) {
+                        const cb = document.getElementById(id);
+                        if (cb) {
+                            cb.checked = checkboxDefaults[id];
+                            // fire its change handler so fixedRatio is cleared
+                            cb.dispatchEvent(new Event("change"));
+                        }
+                    }
+                    document.getElementById("ventilationMode").dispatchEvent(new Event("input"));
+                    document.getElementById("SP").dispatchEvent(new Event("change"));
+                    runSimulation();
+                    updateIERatio();
+                    updateRR();
+                }
+
+                // Setup the reset button click event.
+                const resetButton = document.querySelector(".reset-button");
+                resetButton.addEventListener("click", () => {
+                    // Call the reset logic.
+                    resetForm();
+
+                    // Visual feedback for the reset button.
+                    resetButton.style.opacity = "0.6";
+                    setTimeout(() => {
+                        resetButton.style.opacity = "1";
+                    }, 150);
+                });
+
+                // Call the reset function on page load.
+                resetForm();
+            });
+
+            document.addEventListener("DOMContentLoaded", () => {
+                const timeControls = document.getElementById("time_controls_container");
+                const patientTimeSlot = document.getElementById("patient_time_slot");
+                const ventilatorTimeSlot = document.getElementById("ventilator_time_slot");
+
+                function updateTimeLocation() {
+                    if (spCheckbox.checked) {
+                        patientTimeSlot.appendChild(timeControls);
+                    } else {
+                        ventilatorTimeSlot.appendChild(timeControls);
+                    }
+                }
+
+                updateTimeLocation(); // Initial load
+                spCheckbox.addEventListener("change", updateTimeLocation);
+            });
+
+            // helper: keep up to 2 decimals, then drop any trailing zeros/decimal
+            function formatRatio(val) {
+                let s = val.toFixed(2);
+                return s.replace(/\.?0+$/, "");
+            }
+            let fixedRatio = null;
+            const fixCheckbox = document.getElementById("fix_ier");
+
+            fixCheckbox.addEventListener("change", () => {
+                if (fixCheckbox.checked) {
+                    fixedRatio = parseFloat(teSlider.value) / parseFloat(tiSlider.value);
+                } else {
+                    fixedRatio = null;
+                }
+
+                updateIERatio();
+            });
+            function updateIERatio() {
+                const ti = parseFloat(document.getElementById("ti").value);
+                const te = parseFloat(document.getElementById("te").value);
+                const out = document.getElementById("i_e_value");
+
+                if (ti > 0) {
+                    const ratio = te / ti;
+                    out.innerText = `1 : ${formatRatio(ratio)}`; // note spaces around “:”
+                } else {
+                    out.innerText = "–";
+                }
+            }
+
+            tiSlider.addEventListener("input", () => {
+                if (fixedRatio !== null) {
+                    // compute the expiratory time you'd need
+                    let wantedTe = fixedRatio * parseFloat(tiSlider.value);
+
+                    // if that Te is out of bounds, clamp the Ti instead
+                    if (wantedTe < minTe) {
+                        const clampedTi = (minTe / fixedRatio).toFixed(1);
+                        tiSlider.value = clampedTi;
+                        tiValue.textContent = clampedTi;
+                        wantedTe = minTe;
+                    } else if (wantedTe > maxTe) {
+                        const clampedTi = (maxTe / fixedRatio).toFixed(1);
+                        tiSlider.value = clampedTi;
+                        tiValue.textContent = clampedTi;
+                        wantedTe = maxTe;
+                    }
+
+                    // now write that Te back
+                    teSlider.value = wantedTe.toFixed(1);
+                    teValue.textContent = teSlider.value;
+                    // fire its input handler so muscle-relax gets clamped
+                    teSlider.dispatchEvent(new Event("input"));
+                }
+                updateIERatio();
+            });
+
+            teSlider.addEventListener("input", () => {
+                // first your existing muscle-relax clamp runs (it should be registered earlier)
+                // now do the ratio lock
+
+                if (fixedRatio !== null) {
+                    // compute the inspiratory time you'd need
+                    let wantedTi = parseFloat(teSlider.value) / fixedRatio;
+
+                    // clamp if out of bounds
+                    if (wantedTi < minTi) {
+                        const clampedTe = (fixedRatio * minTi).toFixed(1);
+                        teSlider.value = clampedTe;
+                        teValue.textContent = clampedTe;
+                        wantedTi = minTi;
+                    } else if (wantedTi > maxTi) {
+                        const clampedTe = (fixedRatio * maxTi).toFixed(1);
+                        teSlider.value = clampedTe;
+                        teValue.textContent = clampedTe;
+                        wantedTi = maxTi;
+                    }
+
+                    // write Ti back
+                    tiSlider.value = wantedTi.toFixed(1);
+                    tiValue.textContent = tiSlider.value;
+                    // fire its input handler so ratio/numeric display updates
+                    tiSlider.dispatchEvent(new Event("input"));
+                }
+
+                updateIERatio();
+            });
+
+            // init on load
+            updateIERatio();
+
+            function updateRR() {
+                const ti = parseFloat(tiSlider.value);
+                const te = parseFloat(teSlider.value);
+                // avoid division by zero
+                if (ti + te > 0) {
+                    const rr = 60 / (ti + te);
+                    rrDisplay.textContent = rr.toFixed(1);
+                } else {
+                    rrDisplay.textContent = "–";
+                }
+            }
+
+            // wire it up
+            tiSlider.addEventListener("input", updateRR);
+            tiSlider.addEventListener("change", updateRR);
+            teSlider.addEventListener("input", updateRR);
+            teSlider.addEventListener("change", updateRR);
+
+            // init on load
+            updateRR();
+        </script>
+    </body>
+</html>
