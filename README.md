@@ -1,5 +1,5 @@
 # Bronchoscopy
-Numerical simulation tool for predicting the impact of bronchoscopy on ventilation, supporting clinical decision-making by guiding ventilator settings to reduce dynamic hyperinflation and hypoventilation. Includes Python script and a browser-based interface.
+Numerical simulation tool for predicting the impact of endotracheal tube diameter and bronchoscopy on pressure and flow patterns during mechanical ventilation. Includes a Python script and a browser-based interface.
 
 ## Quick Start
 ➡️ Click on the image to get started 
