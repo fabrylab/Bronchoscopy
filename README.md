@@ -1,7 +1,7 @@
 # Bronchoscopy
 Numerical simulation tool for predicting the impact of bronchoscopy on ventilation, supporting clinical decision-making by guiding ventilator settings to reduce dynamic hyperinflation and hypoventilation. Includes Python script and a browser-based interface.
 
-<a href="https://johannes-bartl.github.io/ventilation/" target="_blank">
+<a href="https://fabrylab.github.io/Bronchoscopy/" target="_blank">
   <img src="docs/simulation.png" alt="View Site" style="max-width: 100%; height: auto; border: 1px solid #ccc; margin-top: 20px;" />
 </a>
 
