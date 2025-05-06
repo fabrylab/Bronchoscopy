@@ -877,20 +877,20 @@
                 const Cath_OD = rawCath === 3.7 ? 0 : rawCath;
                 const Ideal = document.getElementById("Ideal").checked;
                 const dt = 0.001;
-                let k1, beta;
+                let beta;
+                const k1 = 0.72
+                const d0 = 10 //mm reference diameter
                 if (Cath_OD > 0) {
                     beta = -5;
-                    k1 = 72387;
                     console.log("Obstructed");
                 } else {
-                    beta = -4;
-                    k1 = 6652;
+                    beta = -3.6;
                     console.log("Unobstructed");
                 }
                 const deff = Math.sqrt(Math.max(ETT_ID * ETT_ID - Cath_OD * Cath_OD, 0));
-                const k1_in = k1 * Math.pow(deff, beta);
+                const k1_in = k1 * Math.pow((deff/d0), beta);
                 const k2_in = 4 * k1_in; //changed from 4.3 to 4
-                const k1_ex = k1 * Math.pow(deff, beta);
+                const k1_ex = k1 * Math.pow((deff/d0), beta);
                 const k2_ex = 4 * k1_ex; //changed from 4.3 to
                 const i_e_r = ti / te;
                 const rr = 60 / (ti + te);

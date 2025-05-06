@@ -67,24 +67,24 @@ f_cutoff = 6  # cutoff frequency of the demand flow controler [0.1 .. 1000]
 
 # ETT - tube resistance parameters
 ETT_ID = 7.0  # inner diameter of the endotracheal tube [1 .. 12]
-Cath_OD = 4.4  # outher diameter of a bronchoscopy tube [0 .. 12]
+Cath_OD = 0  # outher diameter of a bronchoscopy tube [0,3.8 .. 12]
 if Cath_OD >= ETT_ID:
     Cath_OD = ETT_ID - 0.5  # outer diameter of the bronchoscopy catheter must be 0.5 mm smaller than the inner tube diameter
 
 # %% initialization
+k1 = 0.72
 if Cath_OD > 0:
     beta = -5 #obstructed tube
-    k1 = 72387
 else:
-    beta = -4.0 #unobstructed tube
-    k1 = 6652
+    beta = -3.6 #unobstructed tube
 
 
 deff = np.sqrt(ETT_ID ** 2 - Cath_OD ** 2)
+d0 = 10 #mm reference brochoscope
 
-k1_in = k1 * deff ** beta
+k1_in = k1 * (deff/d0) ** beta
 k2_in = 4 * k1_in #changed from 4.3 to 4
-k1_ex = k1 * deff ** beta
+k1_ex = k1 * (deff/d0) ** beta
 k2_ex = 4 * k1_ex #changed from 4.3 to 4
 
 i_e_r = ti / te  # i:e ratio
