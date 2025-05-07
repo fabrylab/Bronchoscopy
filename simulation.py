@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib import patches
 import numpy as np
 # from scipy.optimize import fsolve
+# faster but without errorchecks
 def fsolve(func, x0, tol=1e-6, max_iter=100):
     x1 = x0
     x2 = x0 * 1.1 if x0 != 0 else 1e-3
@@ -57,17 +58,17 @@ else:
 t_rise = 0.2  # pressure rise time of the pressure support in s [0 .. 10]
 
 # resistance and demand flow control parameters of the ventilator
-R_PEEPvalve = 2  # resistance of the expiratory (PEEP) valve [0 .. 100]
+R_PEEPvalve = 2  # resistance of the expiratory (PEEP) valve [0 .. 20]
 Ideal = False  # set to True for an ideal ventilator where the airway pressure is delivered exactly as intended
 # set to False to model the demand-flow characteristics of a real ventilator, which is
 # determined by the Integral control parameter and the cutoff frequency
 # this setting has no effect in VC mode
-Integral = 2  # Integral control parameter for the demand flow controler [0.01 .. 100]
-f_cutoff = 6  # cutoff frequency of the demand flow controler [0.1 .. 1000]
+Integral = 2  # Integral control parameter for the demand flow controler [0.01 .. 10]
+f_cutoff = 6  # cutoff frequency of the demand flow controler [0.1 .. 50]
 
 # ETT - tube resistance parameters
-ETT_ID = 7.0  # inner diameter of the endotracheal tube [1 .. 12]
-Cath_OD = 0  # outher diameter of a bronchoscopy tube [0,3.8 .. 12]
+ETT_ID = 7.0  # inner diameter of the endotracheal tube [6 .. 12]
+Cath_OD = 0  # outher diameter of a bronchoscopy tube [0,3.8 .. 6]
 if Cath_OD >= ETT_ID:
     Cath_OD = ETT_ID - 0.5  # outer diameter of the bronchoscopy catheter must be 0.5 mm smaller than the inner tube diameter
 
